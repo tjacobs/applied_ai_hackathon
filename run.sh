@@ -46,7 +46,7 @@ if ! command -v "${BROWSER_CMD}" >/dev/null 2>&1; then
 fi
 
 echo "[TutorBot] Launching kiosk at ${URL} using ${BROWSER_CMD}..." >&2
-"${BROWSER_CMD}" --kiosk --noerrdialogs --disable-infobars --incognito "${URL}"
+"${BROWSER_CMD}" --kiosk --noerrdialogs --disable-infobars --disable-gpu --incognito "${URL}" 2>/dev/null
 
 # Keep script attached to uvicorn (so CTRL+C stops both)
 wait ${SERVER_PID}

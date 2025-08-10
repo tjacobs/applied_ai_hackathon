@@ -165,7 +165,7 @@ def nod():
     # Nod head
     print("Nod")
     send_positions({"head_yaw": 0, "head_pitch": 0})
-    time.sleep(1)
+    time.sleep(2)
     send_positions({"head_yaw": 0, "head_pitch": 0.4})
     time.sleep(1)
     send_positions({"head_yaw": 0, "head_pitch": 0})
@@ -176,7 +176,7 @@ def shake():
     # Shake head
     print("Shake")
     send_positions({"head_yaw": -0.4, "head_pitch": 0})
-    time.sleep(1)
+    time.sleep(2)
     send_positions({"head_yaw": 0.4, "head_pitch": 0})
     time.sleep(1)
     send_positions({"head_yaw": 0, "head_pitch": 0})
