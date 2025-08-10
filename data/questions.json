@@ -1,0 +1,7 @@
+[
+  {"prompt": "3 + 5 = ?", "choices": [6, 7, 8, 9], "answer": 8, "tts": "What is three plus five?"},
+  {"prompt": "9 - 4 = ?", "choices": [3, 4, 5, 6], "answer": 5, "tts": "What is nine minus four?"},
+  {"prompt": "6 * 7 = ?", "choices": [36, 40, 41, 42], "answer": 42, "tts": "What is six times seven?"},
+  {"prompt": "12 - 8 = ?", "choices": [2, 3, 4, 5], "answer": 4, "tts": "What is twelve minus eight?"},
+  {"prompt": "4 + 4 = ?", "choices": [6, 7, 8, 9], "answer": 8, "tts": "What is four plus four?"}
+]

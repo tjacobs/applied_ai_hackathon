@@ -1,0 +1,151 @@
+:root {
+  --bg: #0f172a;
+  --panel: #0f1a2e;
+  --text: #eef2ff;
+  --muted: #9aa7bd;
+  --accent: #22c55e; /* green */
+  --accent-2: #38bdf8; /* sky */
+  --accent-3: #f472b6; /* pink */
+  --danger: #ef4444;
+  --card: #0b1220;
+  --border: #1b2a45;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 800px at 10% 10%, #0b1220, var(--bg));
+  color: var(--text);
+  font-family: 'Outfit', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 20px; /* base size larger for touch */
+}
+
+#app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background:
+    radial-gradient(1200px 500px at -10% -10%, rgba(56, 189, 248, 0.15), transparent 50%),
+    radial-gradient(800px 400px at 110% -10%, rgba(244, 114, 182, 0.12), transparent 50%),
+    linear-gradient(180deg, var(--panel), #0d1627);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.brand.minimal { margin-bottom: 32px; }
+
+.brand-left { display: flex; align-items: center; gap: 12px; }
+.logo { width: 44px; height: 44px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+.brand-text .title { margin: 0; font-size: 42px; letter-spacing: 0.2px; }
+.brand-text .title.plain { color: #ffffff; background: none; }
+.brand-text .subtitle { color: var(--muted); font-size: 18px; margin-top: 4px; }
+
+.badge {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--accent-2);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 16px;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  gap: 24px;
+  min-height: 70vh;
+}
+
+section {
+  background: linear-gradient(180deg, var(--panel), #0d1627);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.center-message {
+  font-size: 72px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.problem-card { grid-column: 1 / -1; }
+
+/* Touch-first choices */
+.choices-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.choice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+  padding: 18px 20px;
+  font-size: 38px;
+  font-weight: 700;
+  background: linear-gradient(180deg, #1e293b, #0b1220);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.06s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.2s ease;
+}
+
+.choice-btn:hover, .choice-btn:active {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
+  transform: translateY(-1px);
+}
+
+.feedback { margin-top: 12px; min-height: 28px; font-size: 22px; }
+.feedback.success { color: var(--accent); }
+.feedback.error { color: var(--danger); }
+
+.score-card { display: flex; gap: 32px; align-items: center; }
+.stat .value { font-size: 32px; }
+
+.log-card .log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 14px;
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  min-height: 140px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
+}
+
+footer { margin-top: 20px; color: var(--muted); }
+
+/* Playful rainbow underline for title */
+.title {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hidden { display: none; }
+
+@media (max-width: 800px) {
+  main { grid-template-columns: 1fr; }
+}
