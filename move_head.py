@@ -29,7 +29,6 @@ def main():
         for name, motor in motors.items():
             motor.set_mech_position_to_zero()
             print(f"{name} motor zeroed")
-            time.sleep(0.05)
 
     # Run
     run()
@@ -39,7 +38,10 @@ def main():
         try:
             # Move
             send_positions({"head_yaw": 0, "head_pitch": 0})
-            time.sleep(1)
+            time.sleep(5)
+
+            # Nod
+            nod()
 
         except KeyboardInterrupt:
             print("\nCtrl+C pressed. Stopping motors...")
@@ -144,6 +146,18 @@ def send_positions(positions):
 
         # Send position command
         if True: motor.send_position_command(command_position)
+
+
+def nod():
+    global motor_port, motors
+
+    # Nod head
+    print("Nod")
+    send_positions({"head_yaw": 0, "head_pitch": 0})
+    time.sleep(1)
+    send_positions({"head_yaw": 0, "head_pitch": 0.4})
+    time.sleep(1)
+    send_positions({"head_yaw": 0, "head_pitch": 0})
 
 
 # Run main
