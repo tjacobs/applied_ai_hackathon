@@ -5,7 +5,6 @@ import time
 import traceback
 from lib.motors import Motors
 
-
 # Motor port
 CAN_PORT = "/dev/ttyACM0"
 
@@ -35,9 +34,6 @@ def main():
         for name, motor in motors.items():
             motor.set_mech_position_to_zero()
             print(f"{name} motor zeroed")
-
-    # Run
-    run()
 
     # Move
     while True:
@@ -84,11 +80,7 @@ def init():
     if initialized_motor_count != total_expected_motors:
         print(f"WARNING: Not all expected motors were initialized! {initialized_motor_count} out of {total_expected_motors}.")
 
-
-def run():
-    global motor_port, motors
-
-    # Move
+    # Enable motors
     try:
         # Set position mode so we can check positions before enabling motors
         for name, motor in motors.items(): motor.set_run_mode(motor_port.MODE_POSITION)
@@ -178,6 +170,16 @@ def nod():
     time.sleep(1)
     send_positions({"head_yaw": 0, "head_pitch": 0})
 
+def shake():
+    global motor_port, motors
+
+    # Shake head
+    print("Shake")
+    send_positions({"head_yaw": -0.4, "head_pitch": 0})
+    time.sleep(1)
+    send_positions({"head_yaw": 0.4, "head_pitch": 0})
+    time.sleep(1)
+    send_positions({"head_yaw": 0, "head_pitch": 0})
 
 def look_around():
     global motor_port, motors
