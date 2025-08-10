@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
 # Import
+import time
 from lib.motors import Motors
 
 
 # Motor port
-CAN_PORT = "/dev/tty.usbmodem206F308B35411"
+CAN_PORT = "/dev/ttyACM0"
 
 # Motors
 motor_names = ['head_yaw', 'head_pitch']
