@@ -49,6 +49,9 @@ def main():
             # Nod
             nod()
 
+            # Look around
+            look_around()
+
         except KeyboardInterrupt:
             print("\nCtrl+C pressed. Stopping motors...")
             stop_motors()
@@ -174,6 +177,22 @@ def nod():
     send_positions({"head_yaw": 0, "head_pitch": 0.4})
     time.sleep(1)
     send_positions({"head_yaw": 0, "head_pitch": 0})
+
+
+def look_around():
+    global motor_port, motors
+
+    # Look around
+    print("Look around")
+    send_positions({"head_yaw": -0.3, "head_pitch": 0.3})
+    time.sleep(1)
+    send_positions({"head_yaw": 0.3, "head_pitch": 0.2})
+    time.sleep(1)
+    send_positions({"head_yaw": 0.3, "head_pitch": -0.4})
+    time.sleep(1)
+    send_positions({"head_yaw": 0.0, "head_pitch": -0.4})
+    time.sleep(1)
+    send_positions({"head_yaw": 0.0, "head_pitch": 0.0})
 
 
 # Run main
