@@ -9,11 +9,28 @@ import io
 import wave
 import pyaudio
 import tempfile
-import warnings
 from openai import OpenAI
 
-# Suppress only ALSA warnings
-warnings.filterwarnings('ignore', '.*ALSA.*', module='pyaudio')
+# Completely suppress ALSA error messages
+import ctypes
+from contextlib import contextmanager
+
+@contextmanager
+def suppress_alsa_errors():
+    # Save the original error handler
+    libc = ctypes.CDLL('libc.so.6')
+    stderr_fd = 2  # stderr file descriptor
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    old_stderr = os.dup(stderr_fd)
+    try:
+        # Redirect stderr to /dev/null
+        os.dup2(devnull, stderr_fd)
+        yield
+    finally:
+        # Restore stderr
+        os.dup2(old_stderr, stderr_fd)
+        os.close(old_stderr)
+        os.close(devnull)
 
 # Configuration
 OPENAI_TTS_MODEL = "tts-1"  # or "tts-1-hd" for higher quality
@@ -44,68 +61,70 @@ def speak(text: str, voice: str = None, model: str = None):
     voice = voice or OPENAI_TTS_VOICE
     model = model or OPENAI_TTS_MODEL
     
-    try:
-        # Request audio from OpenAI TTS (request WAV format for direct playback)
-        response = client.audio.speech.create(
-            model=model,
-            voice=voice,
-            input=text,
-            response_format="wav",
-        )
-        
-        # Save to a temporary file
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
-            for chunk in response.iter_bytes():
-                if chunk:
-                    tmp_file.write(chunk)
-            tmp_file_path = tmp_file.name
-        
+    # Suppress ALSA errors during audio playback
+    with suppress_alsa_errors():
         try:
-            # Open the WAV file
-            wf = wave.open(tmp_file_path, 'rb')
-            
-            # Initialize PyAudio with error handling
-            p = pyaudio.PyAudio()
-            
-            # Get default output device info
-            default_output = p.get_default_output_device_info()
-            
-            # Open a stream with explicit device and error handling
-            stream = p.open(
-                format=p.get_format_from_width(wf.getsampwidth()),
-                channels=min(2, wf.getnchannels()),  # Force max 2 channels
-                rate=wf.getframerate(),
-                output=True,
-                output_device_index=default_output['index'],
-                start=False
+            # Request audio from OpenAI TTS (request WAV format for direct playback)
+            response = client.audio.speech.create(
+                model=model,
+                voice=voice,
+                input=text,
+                response_format="wav",
             )
             
-            # Start the stream
-            stream.start_stream()
+            # Save to a temporary file
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
+                for chunk in response.iter_bytes():
+                    if chunk:
+                        tmp_file.write(chunk)
+                tmp_file_path = tmp_file.name
             
-            # Read data in chunks and play
-            data = wf.readframes(CHUNK)
-            while data:
-                stream.write(data)
-                data = wf.readframes(CHUNK)
-            
-            # Cleanup
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-            wf.close()
-            return True
-            
-        finally:
-            # Clean up the temporary file
             try:
-                os.unlink(tmp_file_path)
-            except:
-                pass
+                # Open the WAV file
+                wf = wave.open(tmp_file_path, 'rb')
                 
-    except Exception as e:
-        print(f"Error generating speech: {e}")
-        return False
+                # Initialize PyAudio with error handling
+                p = pyaudio.PyAudio()
+                
+                # Get default output device info
+                default_output = p.get_default_output_device_info()
+                
+                # Open a stream with explicit device and error handling
+                stream = p.open(
+                    format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=min(2, wf.getnchannels()),  # Force max 2 channels
+                    rate=wf.getframerate(),
+                    output=True,
+                    output_device_index=default_output['index'],
+                    start=False
+                )
+                
+                # Start the stream
+                stream.start_stream()
+                
+                # Read data in chunks and play
+                data = wf.readframes(CHUNK)
+                while data:
+                    stream.write(data)
+                    data = wf.readframes(CHUNK)
+                
+                # Cleanup
+                stream.stop_stream()
+                stream.close()
+                p.terminate()
+                wf.close()
+                return True
+                
+            finally:
+                # Clean up the temporary file
+                try:
+                    os.unlink(tmp_file_path)
+                except:
+                    pass
+                    
+        except Exception as e:
+            print(f"Error in speak(): {e}")
+            return False
 
 def test():
     """Test the TTS functionality with a sample phrase."""
