@@ -15,8 +15,8 @@ motor_ids = [0x10, 0x11]
 
 # Position limits
 POSITION_LIMITS = {
-    'head_yaw':       {'min': -0.2, 'max': 0.2, 'step':  0.05,  'offset': 0},
-    'head_pitch':     {'min': -0.2, 'max': 0.2, 'step':  0.05,  'offset': 0},
+    'head_yaw':       {'min': -0.5, 'max': 0.5, 'step':  0.05,  'offset': 0},
+    'head_pitch':     {'min': -0.7, 'max': 0.4, 'step':  0.05,  'offset': 0},
 }
 
 # Global state
