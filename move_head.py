@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# Import
+from lib.motors import Motors
+
+
 # Motor port
 CAN_PORT = "/dev/tty.usbmodem206F308B35411"
 
