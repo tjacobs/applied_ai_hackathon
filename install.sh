@@ -1,2 +1,2 @@
-pip install python-can
+pip install python-can[serial]
 
