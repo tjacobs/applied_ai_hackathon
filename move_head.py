@@ -24,9 +24,31 @@ def main():
     # Init
     init()
 
+    # Zero the motors at their initial positions
+    if False:
+        for name, motor in motors.items():
+            motor.set_mech_position_to_zero()
+            print(f"{name} motor zeroed")
+            time.sleep(0.05)
+
     # Run
     run()
 
+    # Move
+    while True:
+        try:
+            # Move
+            send_positions({"head_yaw": 0, "head_pitch": 0})
+            time.sleep(1)
+
+        except KeyboardInterrupt:
+            print("\nCtrl+C pressed. Stopping motors...")
+            stop_motors()
+            exit()
+        except Exception as e:
+            print(f"\nError: {e}: {traceback.format_exc()}")
+            stop_motors()
+            exit()
 
 def init():
     global motor_port, motors
@@ -60,24 +82,28 @@ def run():
         # Set position mode so we can check positions before enabling motors
         for name, motor in motors.items(): motor.set_run_mode(motor_port.MODE_POSITION)
 
+        # Enable motors
+        print("\nEnabling motors...\n")
+        for name in motors.keys():
+            motor = motors[name]
+            motor.set_run_mode(motor_port.MODE_POSITION)
+            motor.enable_motor()
+
         # Get time
         time_last = time.time()
         time_start = time_last
 
         # Move
         step = 0
-        while True:
+        if True:
             # Process incoming CAN packets
             motor_port.process_packet()
 
             # Read motor status
             for name, motor in motors.items():
                 position, abs_position, mech_position, rotation_count = motor.get_motor_status()
-
-            print(position);
-
-            time.sleep(1)
-
+                print(position);
+    # Done
     except KeyboardInterrupt:
         print("\nCtrl+C pressed. Stopping motors...")
         stop_motors()
@@ -85,7 +111,7 @@ def run():
         print(f"\nError: {e}: {traceback.format_exc()}")
         stop_motors()
     finally:
-        stop_motors()
+        pass
 
 
 # Stop all motors
@@ -94,6 +120,30 @@ def stop_motors():
     for motor in motors.values(): motor.stop_motor()
     time.sleep(1)
     print("Motors stopped.")
+
+
+# Send joint positions to motors
+def send_positions(positions):
+    global motor_port, motors
+    if not motor_port: init()
+
+    # Process incoming CAN packets
+    motor_port.process_packet()
+
+    # Send to each motor
+    for name, motor in motors.items():
+        # Get command
+        command_position = 0.0
+        if name in positions: command_position = positions[name]
+
+        # Get motor status
+        position, abs_position, mech_position, rotation_count = motor.get_motor_status()
+
+        # Print status
+        if name == 'head_yaw': print(f"\t\t\t{name}:\tCommand: {command_position:+.3f},\tPosition: {position:+.3f},\tAbs_position: {abs_position:+.3f},\tMech_position: {mech_position:+.3f},\tRotation_count: {rotation_count}", end='\r')
+
+        # Send position command
+        if True: motor.send_position_command(command_position)
 
 
 # Run main
