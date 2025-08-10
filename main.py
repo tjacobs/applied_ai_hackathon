@@ -3,6 +3,7 @@ import json
 import random
 import uuid
 from pathlib import Path
+from move_head import nod, shake, look_around
 from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
@@ -150,6 +151,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         total = 0
                     current = next_problem()
                     if current is not None:
+                        # Make the robot look around
+                        try:
+                            look_around()
+                        except Exception as e:
+                            print(f"Error making robot look around: {e}")
                         await websocket.send_json({
                             "type": "problem",
                             "payload": {"id": current["id"], "prompt": current["prompt"], "choices": current["choices"], "tts": current.get("tts")},
@@ -164,6 +170,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     if ok:
                         score += 1
                         total += 1
+                        # Make the robot nod
+                        try:
+                            nod()
+                        except Exception as e:
+                            print(f"Error making robot nod: {e}")
                         # Send feedback with updated score
                         await websocket.send_json({
                             "type": "feedback",
@@ -190,6 +201,11 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "payload": {"id": current["id"], "prompt": current["prompt"], "choices": current["choices"], "tts": current.get("tts")},
                             })
                     else:
+                        # Make the robot shake for incorrect answer
+                        try:
+                            shake()
+                        except Exception as e:
+                            print(f"Error making robot shake: {e}")
                         # Incorrect: show feedback but do NOT advance or change totals
                         await websocket.send_json({
                             "type": "feedback",
