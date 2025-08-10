@@ -2,6 +2,7 @@
 
 # Import
 import time
+import traceback
 from lib.motors import Motors
 
 
@@ -20,11 +21,15 @@ motors = {}
 def main():
     global motor_port, motors
 
+    # Init
     init()
-    
+
+    # Run
+    run()
+
 
 def init():
-    print("Init motors")
+    global motor_port, motors
 
     # Init CAN
     motor_port = Motors(channel=CAN_PORT)
@@ -45,6 +50,50 @@ def init():
     print(f"\nMotors initialized: {initialized_motor_count} / {total_expected_motors}")
     if initialized_motor_count != total_expected_motors:
         print(f"WARNING: Not all expected motors were initialized! {initialized_motor_count} out of {total_expected_motors}.")
+
+
+def run():
+    global motor_port, motors
+
+    # Move
+    try:
+        # Set position mode so we can check positions before enabling motors
+        for name, motor in motors.items(): motor.set_run_mode(motor_port.MODE_POSITION)
+
+        # Get time
+        time_last = time.time()
+        time_start = time_last
+
+        # Move
+        step = 0
+        while True:
+            # Process incoming CAN packets
+            motor_port.process_packet()
+
+            # Read motor status
+            for name, motor in motors.items():
+                position, abs_position, mech_position, rotation_count = motor.get_motor_status()
+
+            print(position);
+
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        print("\nCtrl+C pressed. Stopping motors...")
+        stop_motors()
+    except Exception as e:
+        print(f"\nError: {e}: {traceback.format_exc()}")
+        stop_motors()
+    finally:
+        stop_motors()
+
+
+# Stop all motors
+def stop_motors():
+    global motors
+    for motor in motors.values(): motor.stop_motor()
+    time.sleep(1)
+    print("Motors stopped.")
 
 
 # Run main
