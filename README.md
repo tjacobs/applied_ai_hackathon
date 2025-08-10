@@ -1,1 +1,4 @@
-# applied_ai_hackathon
+# Applied AI hackathon
+
+(https://partiful.com/e/hUU7NyM8EjHLxjMuJROs)[https://partiful.com/e/hUU7NyM8EjHLxjMuJROs]
+
