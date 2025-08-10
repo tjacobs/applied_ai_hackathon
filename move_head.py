@@ -13,6 +13,12 @@ CAN_PORT = "/dev/ttyACM0"
 motor_names = ['head_yaw', 'head_pitch']
 motor_ids = [0x10, 0x11]
 
+# Position limits
+POSITION_LIMITS = {
+    'head_yaw':       {'min': -0.2, 'max': 0.2, 'step':  0.05,  'offset': 0},
+    'head_pitch':     {'min': -0.2, 'max': 0.2, 'step':  0.05,  'offset': 0},
+}
+
 # Global state
 motor_port = None
 motors = {}
@@ -126,27 +132,37 @@ def stop_motors():
 
 # Send joint positions to motors
 def send_positions(positions):
-    global motor_port, motors
+    global motor_port, motors, POSITION_LIMITS
+
+    # Init motors if not already
     if not motor_port: init()
 
     # Process incoming CAN packets
     motor_port.process_packet()
 
-    # Send to each motor
-    for name, motor in motors.items():
-        # Get command
-        command_position = 0.0
-        if name in positions: command_position = positions[name]
+    try:
+        # Send to each motor
+        for name, motor in motors.items():
+            # Apply position limits
+            positions[name] = max(min(positions[name], POSITION_LIMITS[name]['max'] + POSITION_LIMITS[name]['offset']), POSITION_LIMITS[name]['min'] + POSITION_LIMITS[name]['offset'])
 
-        # Get motor status
-        position, abs_position, mech_position, rotation_count = motor.get_motor_status()
+            # Get command
+            command_position = 0.0
+            if name in positions: command_position = positions[name]
 
-        # Print status
-        if name == 'head_yaw': print(f"\t\t\t{name}:\tCommand: {command_position:+.3f},\tPosition: {position:+.3f},\tAbs_position: {abs_position:+.3f},\tMech_position: {mech_position:+.3f},\tRotation_count: {rotation_count}", end='\r')
+            # Get motor status
+            position, abs_position, mech_position, rotation_count = motor.get_motor_status()
 
-        # Send position command
-        if True: motor.send_position_command(command_position)
+            # Print status
+            if name == 'head_pitch': print(f"\t\t\t{name}:\tCommand: {command_position:+.3f},\tPosition: {position:+.3f},\tAbs_position: {abs_position:+.3f},\tMech_position: {mech_position:+.3f},\tRotation_count: {rotation_count}", end='\r\n')
 
+            # Send position command
+            if True: motor.send_position_command(command_position)
+
+    except Exception as e:
+        print(f"\nError: {e}: {traceback.format_exc()}")
+        stop_motors()
+        exit()
 
 def nod():
     global motor_port, motors
