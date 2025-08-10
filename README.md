@@ -1,4 +1,7 @@
 # Applied AI hackathon
 
-(https://partiful.com/e/hUU7NyM8EjHLxjMuJROs)[https://partiful.com/e/hUU7NyM8EjHLxjMuJROs]
+A robot tutor.
+
+For:
+https://partiful.com/e/hUU7NyM8EjHLxjMuJROs
 
