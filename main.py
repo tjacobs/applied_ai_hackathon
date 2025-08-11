@@ -156,15 +156,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         # Make the robot look around
                         try:
                             look_around()
-                            # Speak the question text in a non-blocking way
-                            question_text = current.get("prompt", "")
+                            # Speak the question text in a non-blocking way, using tts field if available
+                            question_text = current.get("tts", current.get("prompt", ""))
                             if question_text:
-                                def speak_question():
-                                    try:
-                                        speak(question_text)
-                                    except Exception as e:
-                                        print(f"Error speaking question: {e}")
-                                threading.Thread(target=speak_question, daemon=True).start()
+                                from speak import speak_in_thread
+                                speak_in_thread(question_text)
                         except Exception as e:
                             print(f"Error in question display: {e}")
                         await websocket.send_json({
@@ -210,12 +206,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Speak the next question
                             question_text = current.get("prompt", "")
                             if question_text:
-                                def speak_question():
-                                    try:
-                                        speak(question_text)
-                                    except Exception as e:
-                                        print(f"Error speaking question: {e}")
-                                threading.Thread(target=speak_question, daemon=True).start()
+                                from speak import speak_in_thread
+                                speak_in_thread(question_text)
                             await websocket.send_json({
                                 "type": "problem",
                                 "payload": {"id": current["id"], "prompt": current["prompt"], "choices": current["choices"], "tts": current.get("tts")},

@@ -9,6 +9,7 @@ import io
 import wave
 import pyaudio
 import tempfile
+import threading
 import numpy as np
 from scipy.io import wavfile
 from scipy import signal
@@ -67,14 +68,14 @@ def speak(text: str, voice: str = None, model: str = None):
     Returns:
         bool: True if successful, False otherwise
     """
+    print(f"Speaking: {text}")
+    
     # Initialize OpenAI client
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("Error: OPENAI_API_KEY environment variable not set")
+        print("Error: OPENAI_API_KEY not set")
         return False
 
-    print(f"Speaking: {text}")
-    
     client = OpenAI(api_key=api_key)
     voice = voice or OPENAI_TTS_VOICE
     model = model or OPENAI_TTS_MODEL
@@ -84,23 +85,19 @@ def speak(text: str, voice: str = None, model: str = None):
     INPUT_SAMPLE_RATE = 24000  # OpenAI's default output sample rate
     OUTPUT_SAMPLE_RATE = 16000  # ReSpeaker's supported sample rate
     
-    # List available audio devices for debugging
-    list_audio_devices()
-    print(f"\n=== Using Device {RESPEAKER_DEVICE_INDEX} (ReSpeaker 4 Mic Array) at {OUTPUT_SAMPLE_RATE}Hz ===\n")
-    
     # Suppress ALSA errors during audio playback
     with suppress_alsa_errors():
         try:
             # Request audio from OpenAI TTS
-            print(f"Requesting TTS (will resample to {OUTPUT_SAMPLE_RATE}Hz for output)")
+            print("Requesting TTS from OpenAI...")
             response = client.audio.speech.create(
                 model=model,
                 voice=voice,
                 input=text,
                 response_format="wav",
-                speed=1.3  # Slightly faster for better clarity
+                speed=1.2  # Slightly faster for better clarity
             )
-            print("Received audio response from OpenAI")
+            print("Received TTS response from OpenAI")
             
             # Save to a temporary file
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_file:
@@ -110,31 +107,16 @@ def speak(text: str, voice: str = None, model: str = None):
                         audio_data += chunk
                 tmp_file.write(audio_data)
                 tmp_file_path = tmp_file.name
-                print(f"Saved audio to temporary file: {tmp_file_path}")
-                print(f"Audio data size: {len(audio_data)} bytes")
             
             try:
                 # Open the WAV file
-                print("\n=== Analyzing WAV file...")
                 wf = wave.open(tmp_file_path, 'rb')
-                print(f"WAV file info: {wf.getnchannels()} channels, {wf.getsampwidth()} bytes/sample, {wf.getframerate()} Hz")
-                print(f"WAV file frames: {wf.getnframes()}, duration: {wf.getnframes()/wf.getframerate():.2f} seconds")
                 
-                # Initialize PyAudio with error handling
-                print("\n=== Initializing PyAudio...")
+                # Initialize PyAudio
+                print("Initializing PyAudio...")
                 p = pyaudio.PyAudio()
                 
-                # Get ReSpeaker device info
                 try:
-                    device_info = p.get_device_info_by_index(RESPEAKER_DEVICE_INDEX)
-                    print(f"Using output device {RESPEAKER_DEVICE_INDEX}: {device_info['name']}")
-                    print(f"  Max output channels: {device_info['maxOutputChannels']}")
-                    print(f"  Default sample rate: {device_info['defaultSampleRate']} Hz")
-                    
-                    # Get the actual sample rate from the WAV file
-                    sample_rate = int(wf.getframerate())
-                    print(f"WAV file sample rate: {sample_rate} Hz")
-                    
                     # Read the WAV file
                     wf.rewind()
                     audio_data = wf.readframes(wf.getnframes())
@@ -142,12 +124,11 @@ def speak(text: str, voice: str = None, model: str = None):
                     
                     # Resample from 24kHz to 16kHz if needed
                     if wf.getframerate() != OUTPUT_SAMPLE_RATE:
-                        print(f"Resampling from {wf.getframerate()}Hz to {OUTPUT_SAMPLE_RATE}Hz")
                         num_samples = int(len(audio_array) * OUTPUT_SAMPLE_RATE / wf.getframerate())
                         audio_array = signal.resample(audio_array, num_samples).astype(np.int16)
                     
                     # Open audio stream with device's sample rate
-                    print("\n=== Opening audio stream...")
+                    print(f"Opening audio stream at {OUTPUT_SAMPLE_RATE}Hz...")
                     stream = p.open(
                         format=p.get_format_from_width(wf.getsampwidth()),
                         channels=min(2, wf.getnchannels()),  # Force max 2 channels
@@ -160,54 +141,68 @@ def speak(text: str, voice: str = None, model: str = None):
                     print(f"Audio stream opened with format: {stream._format}, channels: {stream._channels}, rate: {stream._rate}")
                     
                 except Exception as e:
-                    print(f"Error initializing audio device: {str(e)}")
+                    p.terminate()
                     raise
-                print(f"Audio stream opened with format: {stream._format}, channels: {stream._channels}, rate: {stream._rate}")
                 
-                # Start the stream
-                print("Starting audio playback...")
-                stream.start_stream()
+                try:
+                    # Start the stream and play the audio
+                    print("Starting audio playback...")
+                    stream.start_stream()
+                    
+                    # Write audio in chunks with error handling
+                    chunk_size = CHUNK * 2  # For 16-bit audio
+                    total_bytes = 0
+                    for i in range(0, len(audio_array), chunk_size):
+                        chunk = audio_array[i:i + chunk_size].tobytes()
+                        stream.write(chunk)
+                        total_bytes += len(chunk)
+                    
+                    print(f"Sent {total_bytes} bytes to audio device")
+                    
+                    # Wait for the stream to finish playing
+                    while stream.is_active():
+                        import time
+                        time.sleep(0.1)
+                    
+                    print("Playback complete")
+                finally:
+                    # Clean up resources
+                    stream.stop_stream()
+                    stream.close()
+                    p.terminate()
                 
-                # Play the resampled audio
-                print("Starting audio playback...")
-                stream.start_stream()
-                
-                # Write audio in chunks
-                chunk_size = CHUNK * 2  # For 16-bit audio
-                total_bytes = 0
-                for i in range(0, len(audio_array), chunk_size):
-                    chunk = audio_array[i:i + chunk_size].tobytes()
-                    stream.write(chunk)
-                    total_bytes += len(chunk)
-                
-                print(f"Playback complete. Total bytes played: {total_bytes}")
-                
-                # Cleanup
-                stream.stop_stream()
-                stream.close()
-                p.terminate()
+                # Close the WAV file
                 wf.close()
                 return True
                 
             except Exception as e:
-                print(f"Error during audio playback: {str(e)}")
-                import traceback
-                traceback.print_exc()
                 return False
                 
             finally:
                 # Clean up the temporary file
                 try:
                     os.unlink(tmp_file_path)
-                    print(f"Deleted temporary file: {tmp_file_path}")
-                except Exception as e:
-                    print(f"Error deleting temporary file: {e}")
+                except Exception:
+                    pass
                     
         except Exception as e:
             print(f"Error in speak(): {e}")
             import traceback
             traceback.print_exc()
             return False
+
+def speak_in_thread(text: str):
+    """Run speak in a non-daemon thread to ensure completion."""
+    def _speak():
+        try:
+            speak(text)
+        except Exception as e:
+            print(f"Error in speak thread: {e}")
+    
+    thread = threading.Thread(target=_speak)
+    thread.daemon = False  # Ensure thread completes even if main thread exits
+    thread.start()
+    return thread
 
 def test():
     """Test the TTS functionality with a sample phrase."""
