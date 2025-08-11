@@ -2,8 +2,10 @@ import asyncio
 import json
 import random
 import uuid
+import threading
 from pathlib import Path
 from move_head import nod, shake, look_around
+from speak import speak
 from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
@@ -154,8 +156,17 @@ async def websocket_endpoint(websocket: WebSocket):
                         # Make the robot look around
                         try:
                             look_around()
+                            # Speak the question text in a non-blocking way
+                            question_text = current.get("prompt", "")
+                            if question_text:
+                                def speak_question():
+                                    try:
+                                        speak(question_text)
+                                    except Exception as e:
+                                        print(f"Error speaking question: {e}")
+                                threading.Thread(target=speak_question, daemon=True).start()
                         except Exception as e:
-                            print(f"Error making robot look around: {e}")
+                            print(f"Error in question display: {e}")
                         await websocket.send_json({
                             "type": "problem",
                             "payload": {"id": current["id"], "prompt": current["prompt"], "choices": current["choices"], "tts": current.get("tts")},
@@ -196,6 +207,15 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Do not close the socket; allow reconnect or idle
                         else:
                             current = nxt
+                            # Speak the next question
+                            question_text = current.get("prompt", "")
+                            if question_text:
+                                def speak_question():
+                                    try:
+                                        speak(question_text)
+                                    except Exception as e:
+                                        print(f"Error speaking question: {e}")
+                                threading.Thread(target=speak_question, daemon=True).start()
                             await websocket.send_json({
                                 "type": "problem",
                                 "payload": {"id": current["id"], "prompt": current["prompt"], "choices": current["choices"], "tts": current.get("tts")},
